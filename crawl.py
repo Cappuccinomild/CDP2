@@ -43,6 +43,9 @@ def get_page_data(url, params):
         #가격
         goods.append(''.join(re.findall("\d+", item.select_one('span[class=price]>em').text)))
 
+        #배송비
+        goods.append(''.join(re.findall("\d+", item.select_one('ul[class=mall_option]>li>em').text)))
+
         #카테고리
         goods.append(item.select_one('span[class=depth]').text.replace(' ', '').replace('\n', ''))
 
