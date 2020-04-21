@@ -1,13 +1,8 @@
 import requests
+import numpy as np
+import pandas as pd
 from bs4 import BeautifulSoup
 import re
-
-#txt파일로 저장
-def save(out, goods):
-    for key, value in goods.items():
-        out.write(key + '\t')
-        out.write('\t'.join(value))
-        out.write('\n')
 
 def get_total_item_num(url, params):
 
@@ -24,92 +19,75 @@ def get_total_item_num(url, params):
 
     return int(total)
 
-#한 페이지를 읽어서 데이터를 정리
-def get_page_data(url, params):
+if __name__ == "__main__":
+    url = "https://search.shopping.naver.com/search/all.nhn"
 
-    res = requests.get(url, params=params)
+    #GET 파라미터들
+    params = {"pagingIndex" : "1", "pagingSize" : "80", "viewType" : 'list', "sort" : "rel" , "frm" : "NVSHPAG", "query" : ""}
 
-    html = res.text
+    product_name = "KM-037"
 
-    soup = BeautifulSoup(html, 'html.parser')
+    params["query"] = product_name
 
-    search_result = {}
-    for item in soup.select('li[class=_itemSection]'):
+    page = 1
+    TOTAL_ITEM_NUM = get_total_item_num(url, params)
 
-        goods = []
-        #상품명
-        goods.append(item.select_one('div[class=tit]>a').text)
+    #pagesize 읽기
+    import math
+    PAGE_LEN = math.ceil(TOTAL_ITEM_NUM / int(params['pagingSize']))
 
-        #가격
-        goods.append(''.join(re.findall("\d+", item.select_one('span[class=price]>em').text)))
+    ID = []
+    name = []
+    price = []
+    send_price = []
+    category = []
+    mall = []
 
-        #배송비
-        goods.append(''.join(re.findall("\d+", item.select_one('ul[class=mall_option]>li>em').text)))
+    #페이지 끝까지 읽기
+    while page <= PAGE_LEN:
+        print(page)
+        res = requests.get(url, params=params)
 
-        #카테고리
-        goods.append(item.select_one('span[class=depth]').text.replace(' ', '').replace('\n', ''))
+        html = res.text
 
-        #매장
-        goods.append(item.select_one('p[class=mall_txt]>a').get('href'))
+        soup = BeautifulSoup(html, 'html.parser')
 
-        search_result [item.get('data-nv-mid')] = goods
+        #상품정보 저장
+        for item in soup.select('li[class=_itemSection]'):
 
-    return search_result
+            #상품 ID
+            ID = item.get('data-nv-mid')
 
-def dict_merge(a, b):
+            #상품명
+            name.append(item.select_one('div[class=tit]>a').text.replace(",", " "))
 
-    for key, value in b.items():
-        print(key, value)
-        flag = False
+            #가격
+            price.append(''.join(re.findall("\d+", item.select_one('span[class=price]>em').text)))
 
-        try:
+            #배송비
+            send_price.append(''.join(re.findall("\d+", item.select_one('ul[class=mall_option]>li>em').text)))
 
-            print(a[key])
+            #카테고리
+            category.append(item.select_one('span[class=depth]').text.replace(' ', '').replace('\n', ''))
 
-        except:
+            #매장
+            mall.append(item.select_one('p[class=mall_txt]>a').get('href'))
 
-            a[key] = value
-            flag = True
+        page += 1
+        params["pagingIndex"] = str(page)
 
-        if flag == False:
-            print("중복")
+    #상품정보들을 DataFrmae으로
+    search_result = {
+        'ID' : ID,
+        'name' : name,
+        'price' : price,
+        'send_price' : send_price,
+        'category' : category,
+        'mall' : mall
+    }
 
+    search_result = pd.DataFrame(search_result, columns=["ID", "name", "price", "send_price", "category", "mall"])
 
-url = "https://search.shopping.naver.com/search/all.nhn"
+    search_result.to_csv("data.csv", index = False, encoding="utf-8-sig")
 
-#GET 파라미터들
-params = {"pagingIndex" : "1", "pagingSize" : "80", "viewType" : 'list', "sort" : "rel" , "frm" : "NVSHPAG", "query" : ""}
-
-product_name = "KM-037"
-
-params["query"] = product_name
-
-out = open("output.txt", "w", -1, "utf-8")
-
-page = 1
-TOTAL_ITEM_NUM = get_total_item_num(url, params)
-
-
-import math
-PAGE_LEN = math.ceil(TOTAL_ITEM_NUM / int(params['pagingSize']))
-
-search_result={}
-
-while page <= PAGE_LEN:
-
-    prev = len(search_result)
-
-    search_result.update(get_page_data(url, params))
-
-    print(len(search_result) - prev, page)
-
-    page += 1
-    params["pagingIndex"] = str(page)
-
-
-
-save(out, search_result)
-
-print(TOTAL_ITEM_NUM, len(search_result))
-
-out.close()
+    print(TOTAL_ITEM_NUM, len(search_result))
