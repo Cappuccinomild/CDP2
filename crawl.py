@@ -56,7 +56,7 @@ if __name__ == "__main__":
         for item in soup.select('li[class=_itemSection]'):
 
             #상품 ID
-            ID = item.get('data-nv-mid')
+            ID.append(item.get('data-nv-mid'))
 
             #상품명
             name.append(item.select_one('div[class=tit]>a').text.replace(",", " "))
