@@ -58,19 +58,19 @@ def crawl(index, url, page, PAGE_LEN, params):
             ID.append(item.get('data-nv-mid'))
 
             #상품명
-            name.append(item.select_one('div[class=tit]>a').text.replace(",", " "))
+            name.append(item.select_one('div[class=tit] > a').text.replace(",", " "))
 
             #가격
-            price.append(''.join(re.findall("\d+", item.select_one('span[class=price]>em').text)))
+            price.append(''.join(re.findall("\d+", item.select_one('span[class=price] > em').text)))
 
             #배송비
-            send_price.append(''.join(re.findall("\d+", item.select_one('ul[class=mall_option]>li>em').text)))
+            send_price.append(''.join(re.findall("\d+", item.select_one('ul[class=mall_option] > li > em').text)))
 
             #카테고리
             category.append(item.select_one('span[class=depth]').text.replace(' ', '').replace('\n', ''))
 
             #매장
-            mall.append(item.select_one('p[class=mall_txt]>a').get('href'))
+            mall.append(item.select_one('p[class=mall_txt] > a').get('href'))
 
 
         print(page, len(ID))
