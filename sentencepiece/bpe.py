@@ -10,9 +10,9 @@ def clenText(readData):
     return text
 
 def recover(tokens):
-    sent = ''.join(tokens)
-    sent = sent.replace('_', ' ')
-    sent = sent.replace("▁", " ")
+    sent = ' '.join(tokens)
+    sent = sent.replace('_', '')
+    sent = sent.replace("▁", "")
     return sent
 
 sp = spm.SentencePieceProcessor()
@@ -22,7 +22,7 @@ df =  pd.read_csv('data_km.csv')
 
 sentences = []
 for text in df['name']:
-    
+
     sentences.append(clenText(recover(sp.EncodeAsPieces(text))))
 
 df['name'] = sentences
